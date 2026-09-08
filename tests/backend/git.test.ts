@@ -195,6 +195,81 @@ describe('GitService', () => {
     }
   })
 
+  it('respects core.excludesFile from the global git config for untracked files', async () => {
+    const cwd = repository('prime-work-git-global-excludes-config-')
+    const home = mkdtempSync(join(tmpdir(), 'prime-work-git-home-'))
+    dirs.push(home)
+    writeFileSync(join(home, '.gitignore_global'), '.idea/\n')
+    writeFileSync(join(home, '.gitconfig'), '[core]\n\texcludesFile = ~/.gitignore_global\n')
+    mkdirSync(join(cwd, '.idea'))
+    writeFileSync(join(cwd, '.idea', 'misc.xml'), '<misc/>\n')
+    const oldHome = process.env.HOME
+    const oldXdg = process.env.XDG_CONFIG_HOME
+    process.env.HOME = home
+    delete process.env.XDG_CONFIG_HOME
+    try {
+      const service = new GitService(async () => cwd)
+      const status = await service.status(cwd)
+      expect(status.files.find((file) => file.path === '.idea/misc.xml')).toBeUndefined()
+    } finally {
+      if (oldHome === undefined) delete process.env.HOME
+      else process.env.HOME = oldHome
+      if (oldXdg === undefined) delete process.env.XDG_CONFIG_HOME
+      else process.env.XDG_CONFIG_HOME = oldXdg
+    }
+  })
+
+  it('repository core.excludesFile wins over the global one', async () => {
+    const cwd = repository('prime-work-git-repo-excludes-config-')
+    const home = mkdtempSync(join(tmpdir(), 'prime-work-git-home-'))
+    dirs.push(home)
+    writeFileSync(join(home, '.gitignore_global'), '.idea/\n')
+    writeFileSync(join(home, '.gitconfig'), '[core]\n\texcludesFile = ~/.gitignore_global\n')
+    const repoExcludes = join(cwd, 'repo-excludes')
+    writeFileSync(repoExcludes, 'other/\n')
+    git(cwd, 'config', 'core.excludesFile', repoExcludes)
+    mkdirSync(join(cwd, '.idea'))
+    writeFileSync(join(cwd, '.idea', 'misc.xml'), '<misc/>\n')
+    const oldHome = process.env.HOME
+    const oldXdg = process.env.XDG_CONFIG_HOME
+    process.env.HOME = home
+    delete process.env.XDG_CONFIG_HOME
+    try {
+      const service = new GitService(async () => cwd)
+      const status = await service.status(cwd)
+      expect(status.files.find((file) => file.path === '.idea/misc.xml')).toMatchObject({ status: '??' })
+    } finally {
+      if (oldHome === undefined) delete process.env.HOME
+      else process.env.HOME = oldHome
+      if (oldXdg === undefined) delete process.env.XDG_CONFIG_HOME
+      else process.env.XDG_CONFIG_HOME = oldXdg
+    }
+  })
+
+  it('ignores an unsafe global core.excludesFile value', async () => {
+    const cwd = repository('prime-work-git-unsafe-excludes-config-')
+    const home = mkdtempSync(join(tmpdir(), 'prime-work-git-home-'))
+    dirs.push(home)
+    writeFileSync(join(home, '.gitconfig'), '[core]\n\texcludesFile = relative/path\n')
+    mkdirSync(join(cwd, '.idea'))
+    writeFileSync(join(cwd, '.idea', 'misc.xml'), '<misc/>\n')
+    const oldHome = process.env.HOME
+    const oldXdg = process.env.XDG_CONFIG_HOME
+    process.env.HOME = home
+    delete process.env.XDG_CONFIG_HOME
+    try {
+      const service = new GitService(async () => cwd)
+      const status = await service.status(cwd)
+      expect(status.error).toBeUndefined()
+      expect(status.files.find((file) => file.path === '.idea/misc.xml')).toMatchObject({ status: '??' })
+    } finally {
+      if (oldHome === undefined) delete process.env.HOME
+      else process.env.HOME = oldHome
+      if (oldXdg === undefined) delete process.env.XDG_CONFIG_HOME
+      else process.env.XDG_CONFIG_HOME = oldXdg
+    }
+  })
+
   it('restores staged, unstaged, and untracked changes to a clean worktree', async () => {
     const cwd = repository('prime-work-git-restore-all-')
     const service = new GitService(async () => cwd)
