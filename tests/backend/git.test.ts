@@ -184,7 +184,11 @@ describe('GitService', () => {
     mkdirSync(join(cwd, '.idea'))
     writeFileSync(join(cwd, '.idea', 'misc.xml'), '<misc/>\n')
     const oldHome = process.env.HOME
+    const oldXdg = process.env.XDG_CONFIG_HOME
     process.env.HOME = home
+    // When XDG_CONFIG_HOME is set (e.g. on CI runners), git reads
+    // $XDG_CONFIG_HOME/git/ignore instead of $HOME/.config/git/ignore.
+    delete process.env.XDG_CONFIG_HOME
     try {
       const service = new GitService(async () => cwd)
       const status = await service.status(cwd)
@@ -192,6 +196,8 @@ describe('GitService', () => {
     } finally {
       if (oldHome === undefined) delete process.env.HOME
       else process.env.HOME = oldHome
+      if (oldXdg === undefined) delete process.env.XDG_CONFIG_HOME
+      else process.env.XDG_CONFIG_HOME = oldXdg
     }
   })
 
