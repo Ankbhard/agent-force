@@ -274,10 +274,10 @@ async function readGlobalExcludesFile(cwd: string): Promise<string | undefined> 
 }
 
 /**
- * Global `core.excludesFile` normally reaches Git through HOME passthrough,
- * but supplying it via `-c` keeps ignore behavior identical across status,
- * diff, and restore even when the environment read is blocked. A
- * repository-scope setting must still win: `-c` would otherwise override it.
+ * `restrictedGitEnvironment` disables the global config scope, so a user's
+ * `core.excludesFile` never reaches Git on its own. Read that one key safely
+ * and supply it via `-c` so status, diff, and restore match plain `git status`.
+ * A repository-scope setting must still win: `-c` would otherwise override it.
  */
 async function globalExcludesOverride(cwd: string, config: ReadonlyMap<string, string>): Promise<string[]> {
   for (const key of config.keys()) {
