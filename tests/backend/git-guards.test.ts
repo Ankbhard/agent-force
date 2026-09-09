@@ -46,8 +46,14 @@ describe('withRepositoryGuards spawn dedupe', () => {
     expect(status.isRepo).toBe(true)
     const calls = spawnedGitArgs()
     expect(calls.filter((args) => args[0] === 'rev-parse' && args.includes('--show-toplevel'))).toHaveLength(1)
-    expect(calls.filter((args) => args[0] === 'config')).toHaveLength(1)
     expect(calls.filter((args) => args[0] === 'config' && args.includes('--list'))).toHaveLength(1)
+    // The repository config is read once via --list; a cold global-excludes
+    // cache may add one bounded `config --global --get core.excludesFile`.
+    const globalExcludesReads = calls.filter((args) => args[0] === 'config' && !args.includes('--list'))
+    for (const call of globalExcludesReads) {
+      expect(call).toEqual(expect.arrayContaining(['--global', '--get', 'core.excludesFile']))
+    }
+    expect(globalExcludesReads.length).toBeLessThanOrEqual(1)
   })
 
   it('derives commit identity from the single config fetch instead of extra spawns', async () => {
@@ -59,8 +65,10 @@ describe('withRepositoryGuards spawn dedupe', () => {
 
     const committed = await service.commit(cwd, 'deduped identity')
     expect(committed.ok).toBe(true)
-    const calls = spawnedGitArgs()
     // rev-parse --show-toplevel, config --list, commit — and nothing else.
+    // (A cold global-excludes cache may interleave one `config --global --get
+    // core.excludesFile`; it is unrelated to identity, so it is filtered out.)
+    const calls = spawnedGitArgs().filter((args) => !(args[0] === 'config' && args.includes('core.excludesFile')))
     expect(calls.map((args) => args[0])).toEqual(['rev-parse', 'config', 'commit'])
     expect(calls.some((args) => args.includes('--global') || args.includes('--get'))).toBe(false)
 
@@ -84,7 +92,7 @@ describe('withRepositoryGuards spawn dedupe', () => {
 
       const committed = await service.commit(cwd, 'partial identity')
       expect(committed.ok).toBe(true)
-      const globalReads = spawnedGitArgs().filter((args) => args[0] === 'config' && args.includes('--global'))
+      const globalReads = spawnedGitArgs().filter((args) => args[0] === 'config' && args.includes('--global') && !args.includes('core.excludesFile'))
       expect(globalReads).toHaveLength(1)
       expect(globalReads[0]).toContain('user.email')
 
