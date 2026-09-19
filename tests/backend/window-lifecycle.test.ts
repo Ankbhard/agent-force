@@ -13,13 +13,19 @@ const electron = vi.hoisted(() => ({
   Menu: { buildFromTemplate: vi.fn((_template: Array<{ label: string; click(): void }>) => ({ popup: vi.fn() })) },
   nativeImage: { createFromPath: vi.fn() },
   protocol: { registerSchemesAsPrivileged: vi.fn() },
+  screen: {
+    getPrimaryDisplay: vi.fn(() => ({
+      workArea: { x: 0, y: 25, width: 1512, height: 944 },
+      workAreaSize: { width: 1512, height: 944 },
+    })),
+  },
   session: {},
   Tray: class {},
 }))
 
 vi.mock('electron', () => electron)
 
-import { activeShutdownWork, confirmAppClose, hardenRenderer, isMacWindowCloseShortcut, loadInitialRenderer, mainWindowChromeOptions, resolveRendererAssetPath, routeAllWindowsClosed, settleShutdown, shutdownPrompt, startupFailureDialog } from '../../electron/main/index'
+import { activeShutdownWork, confirmAppClose, hardenRenderer, isMacWindowCloseShortcut, loadInitialRenderer, mainWindowChromeOptions, normalizeRevealedWindow, resolveRendererAssetPath, routeAllWindowsClosed, settleShutdown, shutdownPrompt, startupFailureDialog } from '../../electron/main/index'
 import { StateMigrationError, UnsupportedStateVersionError } from '../../electron/main/store'
 import type { RuntimeInfo } from '../../src/types/api'
 import type { BrowserWindow } from 'electron'
@@ -310,5 +316,48 @@ describe('shutdown settlement', () => {
     await settleShutdown([new Promise<void>(() => undefined)], { log, watchdogMs: 25 })
 
     expect(log).toHaveBeenCalledWith(expect.stringContaining('quitting anyway'))
+  })
+})
+
+describe('background window reveal', () => {
+  function makeWindow(overrides: Record<string, unknown> = {}) {
+    return {
+      isDestroyed: () => false,
+      isFullScreen: () => false,
+      setFullScreen: vi.fn(),
+      getBounds: () => ({ x: 40, y: 40, width: 1440, height: 920 }),
+      setSize: vi.fn(),
+      center: vi.fn(),
+      ...overrides,
+    }
+  }
+
+  it('exits fullscreen and restores a centered window on reveal', () => {
+    const window = makeWindow({ isFullScreen: () => true })
+
+    normalizeRevealedWindow(window as unknown as BrowserWindow)
+
+    expect(window.setFullScreen).toHaveBeenCalledWith(false)
+    expect(window.setSize).toHaveBeenCalledWith(1440, 920)
+    expect(window.center).toHaveBeenCalledOnce()
+  })
+
+  it('leaves a normal user-sized window untouched', () => {
+    const window = makeWindow()
+
+    normalizeRevealedWindow(window as unknown as BrowserWindow)
+
+    expect(window.setFullScreen).not.toHaveBeenCalled()
+    expect(window.setSize).not.toHaveBeenCalled()
+    expect(window.center).not.toHaveBeenCalled()
+  })
+
+  it('recenters a window whose bounds escaped the work area', () => {
+    const window = makeWindow({ getBounds: () => ({ x: 0, y: 0, width: 2560, height: 1600 }) })
+
+    normalizeRevealedWindow(window as unknown as BrowserWindow)
+
+    expect(window.setSize).toHaveBeenCalledWith(1440, 920)
+    expect(window.center).toHaveBeenCalledOnce()
   })
 })

@@ -554,6 +554,7 @@ function requestWindow(reason: 'activation' | 'second instance' | 'menu bar' | '
     if (!window || shutdownStarted || window.isDestroyed()) return
     if (!keepTestWindowsHidden) {
       if (window.isMinimized()) window.restore()
+      normalizeRevealedWindow(window)
       window.show()
       window.focus()
     }
@@ -561,6 +562,44 @@ function requestWindow(reason: 'activation' | 'second instance' | 'menu bar' | '
   }).catch((error: unknown) => {
     if (!shutdownStarted) console.error(`GooeyPi failed to open a window after ${reason}: ${boundedErrorMessage(error)}`)
   })
+}
+
+/**
+ * Background mode hides the window instead of closing it, so a reopened window
+ * can still carry a fullscreen frame from before it was hidden. Fresh windows
+ * are already centered by createWindow; this covers the reused-window path.
+ * Normal user-sized windows pass through untouched.
+ */
+export function normalizeRevealedWindow(window: BrowserWindow): void {
+  if (window.isDestroyed()) return
+  try {
+    if (window.isFullScreen()) {
+      window.setFullScreen(false)
+      window.setSize(
+        Math.max(960, Math.min(1440, screen.getPrimaryDisplay().workAreaSize.width)),
+        Math.max(640, Math.min(920, screen.getPrimaryDisplay().workAreaSize.height)),
+      )
+      window.center()
+      return
+    }
+    const workArea = screen.getPrimaryDisplay().workArea
+    const bounds = window.getBounds()
+    const fits = bounds.width <= workArea.width
+      && bounds.height <= workArea.height
+      && bounds.x >= workArea.x
+      && bounds.y >= workArea.y
+      && bounds.x + bounds.width <= workArea.x + workArea.width
+      && bounds.y + bounds.height <= workArea.y + workArea.height
+    if (!fits) {
+      window.setSize(
+        Math.max(960, Math.min(1440, workArea.width)),
+        Math.max(640, Math.min(920, workArea.height)),
+      )
+      window.center()
+    }
+  } catch {
+    // Keep the current window state when display info is unavailable.
+  }
 }
 
 function revealApplication(reason: 'activation' | 'second instance'): void {
