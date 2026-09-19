@@ -169,6 +169,8 @@ describe('sidebar project context menu', () => {
         />,
       )
     })
+    // Projects start collapsed. Expand to reach session rows.
+    await press(container.querySelector('[aria-label="Expand all projects"]')!)
 
     await rightClick(container.querySelector('.session-row')!)
     const copy = [...container.querySelectorAll('[aria-label="Session options"] button')].find((button) => button.textContent?.includes('Copy session UUID'))
@@ -292,6 +294,8 @@ describe('sidebar archive confirmation', () => {
         />,
       )
     })
+    // Projects start collapsed. Expand to reach the archive control.
+    await press(container.querySelector('[aria-label="Expand all projects"]')!)
 
     const archive = container.querySelector('[aria-label="Archive Session"]')
     expect(archive).not.toBeNull()
@@ -332,6 +336,8 @@ describe('sidebar session notifications', () => {
       onArchiveSession: async () => undefined,
     }
     await act(async () => { root.render(<Sidebar {...props} />) })
+    // Projects start collapsed. Expand to reach session rows.
+    await press(container.querySelector('[aria-label="Expand all projects"]')!)
 
     expect(container.querySelector('.session-row-wrap')?.classList.contains('has-attention')).toBe(true)
 

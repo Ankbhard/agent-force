@@ -228,6 +228,35 @@ export function createWorkspaceActions(getDeps: () => WorkspaceActionsDeps) {
       setSessions((items) => items.map((item) => item.id === session.id ? { ...item, title } : item)); setToast('Session renamed.')
     } catch (error) { reportError(error) }
   }
+  const archiveSessions = async (targets: SessionRecord[]) => {
+    const { bridge, workspace, setSessions, setToast, resetBrowserView, closeTerminalForSession, clearSessionAttention, reportError } = getDeps()
+    const pending = targets.filter((session) => !session.archived)
+    if (!pending.length) { setToast('No sessions to archive.'); return }
+    if (!bridge) return
+    try {
+      const archivedPaths: string[] = []
+      for (const session of pending) {
+        try {
+          await bridge.sessions.archive(session.filePath, true)
+          archivedPaths.push(session.filePath)
+          clearSessionAttention(session)
+          closeTerminalForSession(session.filePath)
+        } catch {
+          // Collect per-run failures below. One bad file must not stop the rest.
+        }
+      }
+      if (!archivedPaths.length) throw new Error('None of the sessions could be archived.')
+      const archivedSet = new Set(archivedPaths)
+      setSessions((items) => items.map((item) => archivedSet.has(item.filePath) ? { ...item, archived: true, unread: false } : item))
+      if (workspace.workspaceRef.current.session && archivedSet.has(workspace.workspaceRef.current.session.filePath)) {
+        resetBrowserView()
+        newSession()
+      }
+      const failed = pending.length - archivedPaths.length
+      setToast(failed ? `Archived ${archivedPaths.length} of ${pending.length} sessions.` : `Archived ${archivedPaths.length} sessions.`)
+      if (failed) throw new Error(`${failed} session${failed === 1 ? '' : 's'} could not be archived.`)
+    } catch (error) { reportError(error) }
+  }
   const setSessionArchived = async (session: SessionRecord, archived: boolean) => {
     const { bridge, workspace, setSessions, setToast, resetBrowserView, closeTerminalForSession, clearSessionAttention, reportError } = getDeps()
     if (!bridge) return
@@ -683,7 +712,7 @@ export function createWorkspaceActions(getDeps: () => WorkspaceActionsDeps) {
 
   return {
     grantProject, persistPanel, toggleSidebar, toggleInspector, toggleTerminal,
-    selectProject, selectSession, newSession, navigate, renameSession, setSessionArchived,
+    selectProject, selectSession, newSession, navigate, renameSession, setSessionArchived, archiveSessions,
     addProject, removeProject, togglePinProject, setProjectSortMode, sendPrompt, stopRuntime, installSkill, installExtension, setMcpSupport, connectMcp, setMcpEnabled, mutateCapability,
     createSchedule, updateSchedule, mutateSchedule, manageHeartbeat, openScheduledSession,
     openBrowser, openChanges,

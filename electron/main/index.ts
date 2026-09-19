@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, Menu, nativeTheme, protocol, safeStorage, session, shell, webContents } from 'electron'
+import { app, BrowserWindow, dialog, Menu, nativeTheme, protocol, safeStorage, screen, session, shell, webContents } from 'electron'
 import type { BrowserWindowConstructorOptions, Input, WebContents } from 'electron'
 import { extname, isAbsolute, join, relative, resolve, win32 as win32Path } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
@@ -368,6 +368,9 @@ async function createWindow(): Promise<BrowserWindow | null> {
     minWidth: 960,
     minHeight: 640,
     show: false,
+    center: true,
+    fullscreen: false,
+    fullscreenable: true,
     backgroundColor: '#f5f5f4',
     icon: appIconPath(),
     ...mainWindowChromeOptions(process.platform, resolvedWindowTheme(store?.getSettings().theme)),
@@ -384,6 +387,19 @@ async function createWindow(): Promise<BrowserWindow | null> {
     },
   })
   mainWindow = window
+  // Fixed start by user choice. Ignore last size. Never start in fullscreen.
+  // Clamp to visible work area so traffic lights and chat box stay on screen.
+  try {
+    if (window.isDestroyed()) return null
+    window.setFullScreen(false)
+    const workArea = screen.getPrimaryDisplay().workAreaSize
+    const startWidth = Math.max(960, Math.min(1440, workArea.width))
+    const startHeight = Math.max(640, Math.min(920, workArea.height))
+    window.setSize(startWidth, startHeight)
+    window.center()
+  } catch {
+    // Keep default size and position when display info is unavailable.
+  }
   const renderer = window.webContents
   const rendererId = renderer.id
   hardenRenderer(window)

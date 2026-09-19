@@ -121,6 +121,9 @@ const reasoningLabels: Record<PrimeThinkingLevel, string> = {
 
 const MAX_IMAGE_PROMPT_BYTES = 2 * 1024 * 1024
 
+// Auto-grow cap chosen with user. Grows to ~6 lines, then scrolls inside.
+const MAX_COMPOSER_INPUT_PX = 220
+
 const EMPTY_ANNOTATIONS: BrowserAnnotation[] = []
 const noop = () => undefined
 
@@ -260,6 +263,16 @@ export const Composer = memo(function Composer({
     }
   }, [menu])
 
+
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    // Native control stays sole renderer. Size follows scrollHeight directly.
+    textarea.style.height = 'auto'
+    const next = Math.min(textarea.scrollHeight, MAX_COMPOSER_INPUT_PX)
+    textarea.style.height = `${next}px`
+    textarea.style.overflowY = textarea.scrollHeight > MAX_COMPOSER_INPUT_PX ? 'auto' : 'hidden'
+  }, [value])
 
   // Ctrl/Cmd+Enter in the annotation popover bumps sendSignal to submit the
   // draft (with the just-saved annotation) without switching focus here.

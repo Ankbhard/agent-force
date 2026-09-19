@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  Archive,
   ArrowLeft,
   CalendarClock,
   Check,
@@ -85,6 +86,7 @@ interface ScheduledPageProps {
   onRunNow(id: string): Promise<void>
   onPreview(timing: ScheduleTiming): Promise<SchedulePreview>
   onOpenSession(sessionFile: string): void
+  onArchiveSessions(sessions: SessionRecord[]): Promise<void>
   onManageHeartbeat(id: string, action: 'pause' | 'resume' | 'stop'): Promise<void>
 }
 
@@ -303,7 +305,7 @@ function runIcon(status: ScheduleRunRecord['status']) {
 
 export function ScheduledPage({
   harness, schedules, nativeHeartbeats, projects, sessions, models, lastSelectedModel, error, initialProjectId, initialSessionId, selectedScheduleId,
-  onCreate, onUpdate, onPause, onResume, onDelete, onRunNow, onPreview, onOpenSession, onManageHeartbeat,
+  onCreate, onUpdate, onPause, onResume, onDelete, onRunNow, onPreview, onOpenSession, onArchiveSessions, onManageHeartbeat,
 }: ScheduledPageProps) {
   const [filter, setFilter] = useState<ScheduleFilter>('active')
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -515,6 +517,23 @@ export function ScheduledPage({
     const targetSession = selected.target.kind === 'session' ? sessionMap.get(selected.target.sessionId) : undefined
     const recentRuns = [...selected.runs].sort((a, b) => b.queuedAt.localeCompare(a.queuedAt)).slice(0, 8)
     const busy = Boolean(action)
+    // Finished only by user choice. Succeeded runs with a live linked session.
+    const finishedSessions = (() => {
+      const seen = new Set<string>()
+      const list: SessionRecord[] = []
+      for (const run of selected.runs) {
+        if (run.status !== 'succeeded' || !run.sessionId || seen.has(run.sessionId)) continue
+        seen.add(run.sessionId)
+        const linked = sessionMap.get(run.sessionId)
+        if (linked && !linked.archived) list.push(linked)
+      }
+      return list
+    })()
+    const archiveFinished = () => {
+      if (!finishedSessions.length || action) return
+      if (!window.confirm(`Archive ${finishedSessions.length} finished session${finishedSessions.length === 1 ? '' : 's'} for “${selected.title}”? They will leave the sidebar. Files stay on disk and restore stays possible.`)) return
+      void perform(`archive-sessions:${selected.id}`, () => onArchiveSessions(finishedSessions), 'Finished sessions archived.')
+    }
     return (
       <div className="page scroll-area"><div className="page-container schedule-page schedule-page--detail">
         <button type="button" className="schedule-back" onClick={() => { setSelectedId(null); setActionError(''); setActionNotice('') }}><ArrowLeft size={15} /> All schedules</button>
@@ -541,12 +560,12 @@ export function ScheduledPage({
         </div>
 
         <section className="schedule-history">
-          <header><div><History size={15} /><h2>Run history</h2></div><span>{selected.runs.length} total · latest 8</span></header>
+          <header><div><History size={15} /><h2>Run history</h2></div><span className="schedule-history__meta"><span>{selected.runs.length} total · latest 8</span>{finishedSessions.length ? <button type="button" className="button" disabled={busy} onClick={archiveFinished}><Archive size={13} />{action === `archive-sessions:${selected.id}` ? 'Archiving…' : `Archive finished (${finishedSessions.length})`}</button> : null}</span></header>
           {recentRuns.length ? <div className="schedule-history__list">{recentRuns.map((run) => {
             const runSession = run.sessionId ? sessionMap.get(run.sessionId) : undefined
             return <article key={run.id} className={`schedule-run schedule-run--${run.status}`}>
               <div className="schedule-run__icon">{runIcon(run.status)}</div>
-              <div className="schedule-run__main"><div><strong>{run.status}</strong><span>{run.trigger}</span></div><p>{run.error ?? `Scheduled for ${formatRunDate(run.scheduledFor)}`}</p></div>
+              <div className="schedule-run__main"><div><strong>{run.status}</strong><span>{run.trigger}</span>{runSession?.archived ? <span>Archived</span> : null}</div><p>{run.error ?? `Scheduled for ${formatRunDate(run.scheduledFor)}`}</p></div>
               <time dateTime={run.queuedAt}>{formatRunDate(run.finishedAt ?? run.startedAt ?? run.queuedAt)}</time>
               {run.sessionFile ? <button type="button" className="schedule-session-link" onClick={() => onOpenSession(run.sessionFile!)}>Open {runSession?.title ?? 'session'} <ChevronRight size={13} /></button> : <span className="schedule-run__no-session">No session</span>}
             </article>

@@ -11,6 +11,8 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
+  FoldVertical,
+  UnfoldVertical,
   ListFilter,
   LoaderCircle,
   MessageCircleQuestion,
@@ -254,6 +256,26 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
   }, [archiveTarget])
   const normalized = query.trim().toLowerCase()
   const visibleProjects = useMemo(() => sortProjects(projects.filter((project) => !normalized || project.name.toLowerCase().includes(normalized) || (sessionsByProject.get(project.id) ?? []).some((session) => `${session.title} ${session.preview ?? ''}`.toLowerCase().includes(normalized))), projectSortMode), [projects, sessionsByProject, normalized, projectSortMode])
+  const isSearching = normalized.length > 0
+  // Start closed to keep list calm. No memory across restart by choice.
+  // Search forces open so matches stay visible.
+  const allCollapsed = visibleProjects.length > 0 && visibleProjects.every((project) => collapsed[project.id] ?? true)
+  const toggleAllProjects = () => {
+    if (!visibleProjects.length) return
+    if (allCollapsed) {
+      setCollapsed((value) => {
+        const next = { ...value }
+        for (const project of visibleProjects) next[project.id] = false
+        return next
+      })
+    } else {
+      setCollapsed((value) => {
+        const next = { ...value }
+        for (const project of visibleProjects) next[project.id] = true
+        return next
+      })
+    }
+  }
 
   return (
     <aside ref={sidebarRef} className="sidebar" aria-label="Project and session navigation" tabIndex={overlay ? -1 : undefined}>
@@ -315,11 +337,11 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
       </nav>
 
       <div className="sidebar__scroll scroll-area">
-        <div className="sidebar__section-heading"><span>Projects</span><span className="sidebar__section-heading-actions"><IconButton size="small" className="sidebar__sort-toggle" aria-haspopup="menu" aria-expanded={projectSortMenuOpen} label={t('projects.sort')} onClick={() => setProjectSortMenuOpen((open) => !open)}><ListFilter size={13} /></IconButton><IconButton size="small" label="Add project" onClick={onAddProject}><FolderPlus size={13} /></IconButton>{projectSortMenuOpen ? <div className="sidebar__sort-menu" role="menu" aria-label={t('projects.sort.menu')}>{PROJECT_SORT_MODES.map((mode) => <button key={mode} type="button" role="menuitemradio" aria-checked={projectSortMode === mode} className={projectSortMode === mode ? 'is-active' : ''} onClick={() => { setProjectSortMenuOpen(false); onSetProjectSortMode(mode) }}>{t(PROJECT_SORT_LABEL_KEYS[mode])}{projectSortMode === mode ? <Check size={12} aria-hidden="true" /> : null}</button>)}</div> : null}</span></div>
+        <div className="sidebar__section-heading"><span>Projects</span><span className="sidebar__section-heading-actions">{visibleProjects.length > 0 ? <IconButton size="small" label={t(allCollapsed ? 'projects.expandAll' : 'projects.collapseAll')} aria-expanded={!allCollapsed} onClick={toggleAllProjects}>{allCollapsed ? <UnfoldVertical size={13} /> : <FoldVertical size={13} />}</IconButton> : null}<IconButton size="small" className="sidebar__sort-toggle" aria-haspopup="menu" aria-expanded={projectSortMenuOpen} label={t('projects.sort')} onClick={() => setProjectSortMenuOpen((open) => !open)}><ListFilter size={13} /></IconButton><IconButton size="small" label="Add project" onClick={onAddProject}><FolderPlus size={13} /></IconButton>{projectSortMenuOpen ? <div className="sidebar__sort-menu" role="menu" aria-label={t('projects.sort.menu')}>{PROJECT_SORT_MODES.map((mode) => <button key={mode} type="button" role="menuitemradio" aria-checked={projectSortMode === mode} className={projectSortMode === mode ? 'is-active' : ''} onClick={() => { setProjectSortMenuOpen(false); onSetProjectSortMode(mode) }}>{t(PROJECT_SORT_LABEL_KEYS[mode])}{projectSortMode === mode ? <Check size={12} aria-hidden="true" /> : null}</button>)}</div> : null}</span></div>
         {visibleProjects.length === 0 ? <p className="sidebar__empty">No matching work</p> : null}
         {visibleProjects.map((project) => {
           const projectSessions = (sessionsByProject.get(project.id) ?? []).filter((session) => !normalized || `${session.title} ${session.preview ?? ''}`.toLowerCase().includes(normalized) || project.name.toLowerCase().includes(normalized))
-          const isCollapsed = collapsed[project.id] ?? false
+          const isCollapsed = isSearching ? false : (collapsed[project.id] ?? true)
           const running = projectSessions.some((session) => session.status === 'running')
           return (
             <div className="project-group" key={project.id}>

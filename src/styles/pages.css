@@ -142,6 +142,8 @@
 .schedule-history > header > div { display: flex; align-items: center; gap: 6px; }
 .schedule-history h2 { margin: 0; font-size: 12px; font-weight: 570; }
 .schedule-history > header > span { color: var(--text-tertiary); font-size: 9.5px; }
+.schedule-history__meta { display: inline-flex; align-items: center; gap: 10px; min-width: 0; }
+.schedule-history__meta .button { flex: none; }
 .schedule-history__list { max-height: 430px; overflow-y: auto; }
 .schedule-run { min-height: 68px; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto minmax(90px, auto); align-items: center; gap: 10px; padding: 9px 6px; border-bottom: 1px solid var(--border); }
 .schedule-run__icon { width: 26px; height: 26px; display: grid; place-items: center; border-radius: 7px; color: var(--prime); background: var(--prime-soft); }
