@@ -360,6 +360,13 @@ export function setTitleBarTheme(sender: WebContents, theme: ResolvedTheme): boo
   return true
 }
 
+function startSize(workWidth: number, workHeight: number): { width: number; height: number } {
+  return {
+    width: Math.max(960, Math.min(1440, workWidth)),
+    height: Math.max(640, Math.min(920, workHeight)),
+  }
+}
+
 async function createWindow(): Promise<BrowserWindow | null> {
   if (shutdownStarted) return null
   const window = new BrowserWindow({
@@ -393,9 +400,8 @@ async function createWindow(): Promise<BrowserWindow | null> {
     if (window.isDestroyed()) return null
     window.setFullScreen(false)
     const workArea = screen.getPrimaryDisplay().workAreaSize
-    const startWidth = Math.max(960, Math.min(1440, workArea.width))
-    const startHeight = Math.max(640, Math.min(920, workArea.height))
-    window.setSize(startWidth, startHeight)
+    const size = startSize(workArea.width, workArea.height)
+    window.setSize(size.width, size.height)
     window.center()
   } catch {
     // Keep default size and position when display info is unavailable.
@@ -573,30 +579,18 @@ function requestWindow(reason: 'activation' | 'second instance' | 'menu bar' | '
 export function normalizeRevealedWindow(window: BrowserWindow): void {
   if (window.isDestroyed()) return
   try {
-    if (window.isFullScreen()) {
-      window.setFullScreen(false)
-      window.setSize(
-        Math.max(960, Math.min(1440, screen.getPrimaryDisplay().workAreaSize.width)),
-        Math.max(640, Math.min(920, screen.getPrimaryDisplay().workAreaSize.height)),
-      )
-      window.center()
-      return
-    }
+    const full = window.isFullScreen()
     const workArea = screen.getPrimaryDisplay().workArea
     const bounds = window.getBounds()
-    const fits = bounds.width <= workArea.width
+    if (!full
+      && bounds.width <= workArea.width
       && bounds.height <= workArea.height
       && bounds.x >= workArea.x
-      && bounds.y >= workArea.y
-      && bounds.x + bounds.width <= workArea.x + workArea.width
-      && bounds.y + bounds.height <= workArea.y + workArea.height
-    if (!fits) {
-      window.setSize(
-        Math.max(960, Math.min(1440, workArea.width)),
-        Math.max(640, Math.min(920, workArea.height)),
-      )
-      window.center()
-    }
+      && bounds.y >= workArea.y) return
+    if (full) window.setFullScreen(false)
+    const size = startSize(workArea.width, workArea.height)
+    window.setSize(size.width, size.height)
+    window.center()
   } catch {
     // Keep the current window state when display info is unavailable.
   }
