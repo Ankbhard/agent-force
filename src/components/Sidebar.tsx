@@ -192,6 +192,7 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
   const [query, setQuery] = useState('')
   const [harnessMenuOpen, setHarnessMenuOpen] = useState(false)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+  const [sessionsExpanded, setSessionsExpanded] = useState<Record<string, boolean>>({})
   const [searchOpen, setSearchOpen] = useState(false)
   const sidebarRef = useFocusTrap<HTMLElement>(overlay, onClose)
   const [projectMenu, setProjectMenu] = useState<string | null>(null)
@@ -343,6 +344,9 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
           const projectSessions = (sessionsByProject.get(project.id) ?? []).filter((session) => !normalized || `${session.title} ${session.preview ?? ''}`.toLowerCase().includes(normalized) || project.name.toLowerCase().includes(normalized))
           const isCollapsed = isSearching ? false : (collapsed[project.id] ?? true)
           const running = projectSessions.some((session) => session.status === 'running')
+          const showAllSessions = sessionsExpanded[project.id] ?? false
+          const visibleSessions = showAllSessions ? projectSessions : boundedSidebarSessions(projectSessions)
+          const hiddenSessionCount = projectSessions.length - visibleSessions.length
           return (
             <div className="project-group" key={project.id}>
               <div
@@ -362,8 +366,9 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
                 {projectMenu === project.id ? <div className="project-row__menu" role="menu" aria-label={`Project options for ${project.name}`}>{!project.inferred ? <button type="button" role="menuitem" onClick={() => { setProjectMenu(null); onTogglePinProject(project) }}><Pin size={12} /> {t(project.pinned ? 'projects.unpin' : 'projects.pin')}</button> : null}<button type="button" role="menuitem" onClick={() => { setProjectMenu(null); setRemoveTarget(project) }}><Trash2 size={12} /> Remove project</button></div> : null}
               </div>
               {!isCollapsed ? (
-                <div className="session-list">
-                  {boundedSidebarSessions(projectSessions).map((session) => (
+                <>
+                <div className="session-list scroll-area">
+                  {visibleSessions.map((session) => (
                     <div key={session.id} className={`session-row-wrap session-row-wrap--${session.status} ${needsAttention(session) ? 'has-attention' : ''} ${activeSessionId === session.id && activeView === 'session' ? 'is-selected' : ''}`}>
                       <button type="button" title={session.title} className="session-row" onClick={() => { setSessionMenu(null); onSelectSession(session) }} onContextMenu={(event) => { event.preventDefault(); setSessionMenu(session.id) }}>
                         <SessionStatusMark status={session.status} attention={needsAttention(session)} />
@@ -387,6 +392,9 @@ function SidebarView({ projects, sessions, activeProjectId, activeSessionId, act
                   ))}
                   {projectSessions.length === 0 ? <button type="button" title={`New session in ${project.name}`} className="session-row session-row--empty" onClick={() => { setProjectMenu(null); onNewSession(project) }}><NotebookPen size={12} /> New session</button> : null}
                 </div>
+                {hiddenSessionCount > 0 ? <button type="button" className="session-list__more" onClick={() => setSessionsExpanded((value) => ({ ...value, [project.id]: true }))}>+{hiddenSessionCount} more</button> : null}
+                {showAllSessions && projectSessions.length > SIDEBAR_SESSION_LIMIT ? <button type="button" className="session-list__more" onClick={() => setSessionsExpanded((value) => ({ ...value, [project.id]: false }))}>Show less</button> : null}
+                </>
               ) : null}
             </div>
           )

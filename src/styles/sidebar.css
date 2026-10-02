@@ -52,7 +52,7 @@
 .project-row__menu { position: absolute; z-index: 120; top: 33px; right: 2px; width: 154px; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); box-shadow: var(--shadow-popover); }
 .project-row__menu button { width: 100%; min-height: 29px; display: flex; align-items: center; gap: 7px; padding: 0 7px; border-radius: 5px; color: var(--text-secondary); background: transparent; text-align: left; }
 .project-row__menu button:hover, .project-row__menu button:focus-visible { color: var(--danger); background: var(--danger-soft); }
-.session-list { padding-left: 20px; margin-top: 1px; }
+.session-list { max-height: 280px; overflow-y: auto; padding-left: 20px; margin-top: 1px; }
 .session-row-wrap { position: relative; border-radius: 7px; }
 .session-row-wrap:hover, .session-row-wrap:focus-within { background: var(--surface-hover); }
 .session-row-wrap.has-attention:not(.is-selected) { background: color-mix(in srgb, var(--prime-soft) 88%, var(--sidebar)); }
@@ -78,6 +78,8 @@
 .session-row__title { color: var(--text); font-size: 12px; }
 .session-row__meta { color: var(--text-tertiary); font-size: 10.5px; }
 .session-row--empty { min-height: 30px; align-items: center; color: var(--text-tertiary); font-size: 11.5px; }
+.session-list__more { width: calc(100% - 20px); min-height: 28px; display: flex; align-items: center; margin-left: 20px; padding: 0 6px; border-radius: 6px; color: var(--text-tertiary); background: transparent; text-align: left; font-size: 11.5px; }
+.session-list__more:hover { color: var(--text); background: var(--surface-hover); }
 .project-working, .session-status-mark { width: 16px; height: 16px; display: inline-grid; place-items: center; flex: 0 0 auto; border-radius: 50%; }
 .project-working, .session-status-mark--running { color: var(--prime); }
 .session-status-mark--waiting, .session-status-mark--complete { color: var(--text-tertiary); }
