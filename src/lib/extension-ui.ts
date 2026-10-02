@@ -34,6 +34,17 @@ const MAX_OPTIONS = 32
 const ASK_USER_RPC_MARKER = '__prime_ask_user__'
 export const ASK_USER_TIMEOUT_MS = 120_000
 
+/**
+ * Effective auto-dismiss timeout for an ask-user dialog. The user setting
+ * always wins over the requester's timeout; 0 (or negative) disables the
+ * timer so the dialog waits until answered or cancelled.
+ */
+export function resolveAskUserTimeout(settingMs: number, requestMs?: number): number | undefined {
+  if (Number.isInteger(settingMs) && settingMs > 0) return settingMs
+  if (settingMs === 0) return undefined
+  return requestMs ?? ASK_USER_TIMEOUT_MS
+}
+
 function stringValue(value: unknown, max: number): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 && value.length <= max ? value : undefined
 }

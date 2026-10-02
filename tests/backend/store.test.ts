@@ -47,6 +47,7 @@ describe('JsonStateStore', () => {
     const path = join(dir, 'state.json')
     const store = new JsonStateStore(path)
     expect(store.getSettings().askUserEnabled).toBe(false)
+    expect(store.getSettings().askUserTimeoutMs).toBe(0)
 
     await store.update((state) => { state.settings.askUserEnabled = true })
     await store.beginShutdown()

@@ -509,6 +509,12 @@ export interface AppSettings {
   telemetry: boolean
   /** GooeyPi-managed ask_user tool, shared by every interactive harness. */
   askUserEnabled: boolean
+  /**
+   * Effective auto-dismiss timeout for ask-user dialogs in milliseconds.
+   * Overrides any timeout sent by the requester. 0 disables the timer so
+   * dialogs wait until answered or cancelled. Default 0 (disabled).
+   */
+  askUserTimeoutMs: number
   /** Expose GooeyPi's thread-scoped in-app browser controls to new sessions. */
   browserEnabled: boolean
   /** Expose the separately installed TryCUA driver to new sessions through its official CLI. */

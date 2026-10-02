@@ -38,7 +38,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="pi" skills={[askUser]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={setEnabled}
+        askUserEnabled={true} onSetAskUserEnabled={setEnabled} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={refresh} onInstall={async () => ({ ok: true, output: '' })}
@@ -71,7 +71,7 @@ describe('PluginsPage bundled capability controls', () => {
     const render = async (enabled: boolean) => act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[browser]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={enabled} onSetBrowserEnabled={setBrowserEnabled}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -104,7 +104,7 @@ describe('PluginsPage bundled capability controls', () => {
     const render = async (enabled: boolean) => act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[{ ...notion, enabled }]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={refresh} onInstall={async () => ({ ok: true, output: '' })}
@@ -137,7 +137,7 @@ describe('PluginsPage bundled capability controls', () => {
     const render = async (enabled: boolean) => act(async () => {
       root.render(<PluginsPage
         harness="omp" skills={[{ ...docs, enabled }]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -169,7 +169,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[docs]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -201,7 +201,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[record]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -220,7 +220,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="omp" skills={[computerUse]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={setEnabled} onOpenExternal={openExternal}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -243,7 +243,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[]} warnings={[]} loading={false} activeProjectPath="/repo"
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -265,7 +265,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="omp" skills={[]} warnings={[]} loading={false} activeProjectPath="/repo"
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -300,7 +300,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="pi" skills={[piMcp]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={refresh} onInstall={async () => ({ ok: true, output: '' })}
@@ -319,7 +319,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="prime" skills={[]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={refresh} onInstall={async () => ({ ok: true, output: '' })}
@@ -339,7 +339,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="pi" skills={[]} warnings={[]} loading={false} activeProjectPath="/repo"
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={openExternal}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -385,7 +385,7 @@ describe('PluginsPage bundled capability controls', () => {
     await act(async () => {
       root.render(<PluginsPage
         harness="pi" skills={[adapter, files]} warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}
@@ -431,7 +431,7 @@ describe('PluginsPage bundled capability controls', () => {
       root.render(<PluginsPage
         harness={harness} skills={harness === 'pi' ? [adapter, unusual, oversized] : [unusual, oversized]}
         warnings={[]} loading={false}
-        askUserEnabled={true} onSetAskUserEnabled={async () => undefined}
+        askUserEnabled={true} onSetAskUserEnabled={async () => undefined} askUserTimeoutMs={120_000} onSetAskUserTimeoutMs={async () => undefined}
         browserEnabled={true} onSetBrowserEnabled={async () => undefined}
         computerUseEnabled={false} onSetComputerUseEnabled={async () => undefined} onOpenExternal={() => undefined}
         onRefresh={async () => undefined} onInstall={async () => ({ ok: true, output: '' })}

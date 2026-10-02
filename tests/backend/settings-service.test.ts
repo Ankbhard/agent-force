@@ -111,6 +111,9 @@ describe('SettingsService.update', () => {
     await expect(service.update({ keepRunningInBackground: 'yes' })).rejects.toThrow(/must be a boolean/)
     await expect(service.update({ launchAtLogin: 1 })).rejects.toThrow(/must be a boolean/)
     await expect(service.update({ askUserEnabled: 'yes' })).rejects.toThrow(/must be a boolean/)
+    await expect(service.update({ askUserTimeoutMs: -1 })).rejects.toThrow(/integer from 0 to 86400000/)
+    await expect(service.update({ askUserTimeoutMs: 30_000.5 })).rejects.toThrow(/integer from 0 to 86400000/)
+    await expect(service.update({ askUserTimeoutMs: 86_400_001 })).rejects.toThrow(/integer from 0 to 86400000/)
     await expect(service.update({ browserHome: 'javascript:alert(1)' })).rejects.toThrow(/scheme/)
     await expect(service.update({ disabledProviders: ['../evil'] })).rejects.toThrow(/provider ID/)
     await expect(service.update({ disabledProviders: Array.from({ length: 129 }, () => 'p') })).rejects.toThrow(/bounded/)
@@ -141,6 +144,12 @@ describe('SettingsService.update', () => {
   it('accepts project sort modes', async () => {
     const service = makeService()
     await expect(service.update({ projectSortMode: 'alphabetical' })).resolves.toMatchObject({ projectSortMode: 'alphabetical' })
+  })
+
+  it('accepts ask-user timeout presets including disabled', async () => {
+    const service = makeService()
+    await expect(service.update({ askUserTimeoutMs: 0 })).resolves.toMatchObject({ askUserTimeoutMs: 0 })
+    await expect(service.update({ askUserTimeoutMs: 300_000 })).resolves.toMatchObject({ askUserTimeoutMs: 300_000 })
   })
 
   it('accepts loopback HTTP and remote HTTPS self-hosted transcription servers', async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseExtensionUiRequest } from '../../src/lib/extension-ui'
+import { parseExtensionUiRequest, resolveAskUserTimeout } from '../../src/lib/extension-ui'
 import { pendingExtensionUiForRuntime, type PendingExtensionUi } from '../../src/hooks/useExtensionUi'
 
 describe('extension UI request parsing', () => {
@@ -87,6 +87,24 @@ describe('extension UI request parsing', () => {
   })
 })
 
+
+describe('ask-user timeout resolution', () => {
+  it('lets the user setting override the requester timeout', () => {
+    expect(resolveAskUserTimeout(300_000, 60_000)).toBe(300_000)
+    expect(resolveAskUserTimeout(300_000)).toBe(300_000)
+  })
+
+  it('disables the timer when the setting is zero', () => {
+    expect(resolveAskUserTimeout(0, 60_000)).toBeUndefined()
+    expect(resolveAskUserTimeout(0)).toBeUndefined()
+  })
+
+  it('falls back to the requester timeout or default for an unusable setting', () => {
+    expect(resolveAskUserTimeout(Number.NaN, 60_000)).toBe(60_000)
+    expect(resolveAskUserTimeout(-1, 60_000)).toBe(60_000)
+    expect(resolveAskUserTimeout(Number.NaN)).toBe(120_000)
+  })
+})
 
 describe('pending extension UI ownership', () => {
   it('retains background requests until their runtime becomes active', () => {

@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ExtensionUiResponse } from '@/components/ExtensionUiModal'
-import { ASK_USER_TIMEOUT_MS, parseExtensionUiRequest, type ExtensionUiRequest } from '@/lib/extension-ui'
+import { parseExtensionUiRequest, resolveAskUserTimeout, type ExtensionUiRequest } from '@/lib/extension-ui'
 import type { PrimeWorkApi, RuntimeInfo, SessionRecord } from '@/types/api'
 
 interface UseExtensionUiOptions {
   bridge: PrimeWorkApi | null
   activeRuntimeId?: string
+  /** User's ask-user timeout preference; the setting always wins over request timeouts. */
+  askUserTimeoutMs?: number
   runtimeSessionsRef: React.RefObject<Map<string, string>>
   setSessions: React.Dispatch<React.SetStateAction<SessionRecord[]>>
   setRuntime: React.Dispatch<React.SetStateAction<RuntimeInfo | null>>
@@ -36,6 +38,7 @@ function requestIds(pending: PendingExtensionUi): string[] {
 export function useExtensionUi({
   bridge,
   activeRuntimeId,
+  askUserTimeoutMs = 0,
   runtimeSessionsRef,
   setSessions,
   setRuntime,
@@ -48,6 +51,8 @@ export function useExtensionUi({
   const timedOutQuestionnairesRef = useRef<Set<string>>(new Set())
   const activeRuntimeIdRef = useRef(activeRuntimeId)
   useLayoutEffect(() => { activeRuntimeIdRef.current = activeRuntimeId })
+  const askUserTimeoutRef = useRef(askUserTimeoutMs)
+  useLayoutEffect(() => { askUserTimeoutRef.current = askUserTimeoutMs })
 
   const showPendingForActiveRuntime = useCallback(() => {
     const visible = pendingExtensionUiForRuntime(pendingByRuntimeRef.current, activeRuntimeIdRef.current)
@@ -192,9 +197,10 @@ export function useExtensionUi({
           questions,
           total,
           complete: questions.length >= total,
-          timeout: previous?.request.method === 'questionnaire'
-            ? previous.request.timeout
-            : request.timeout ?? ASK_USER_TIMEOUT_MS,
+          timeout: resolveAskUserTimeout(
+            askUserTimeoutRef.current,
+            previous?.request.method === 'questionnaire' ? previous.request.timeout : request.timeout,
+          ),
         },
         requests,
       }
@@ -212,7 +218,10 @@ export function useExtensionUi({
       cancelPending(previous)
       clearExtensionUi(runtimeId)
     }
-    const pending = { runtimeId, request }
+    const pending = {
+      runtimeId,
+      request: 'timeout' in request ? { ...request, timeout: resolveAskUserTimeout(askUserTimeoutRef.current, request.timeout) } : request,
+    }
     pendingByRuntimeRef.current.set(runtimeId, pending)
     if (activeRuntimeIdRef.current === runtimeId) {
       extensionUiRef.current = pending
