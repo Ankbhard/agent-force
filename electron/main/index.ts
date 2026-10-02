@@ -360,24 +360,16 @@ export function setTitleBarTheme(sender: WebContents, theme: ResolvedTheme): boo
   return true
 }
 
-function startSize(workWidth: number, workHeight: number): { width: number; height: number } {
-  return {
-    width: Math.max(960, Math.min(1440, workWidth)),
-    height: Math.max(640, Math.min(920, workHeight)),
-  }
+function startSize(workWidth: number, workHeight: number): [width: number, height: number] {
+  return [Math.max(960, Math.min(1440, workWidth)), Math.max(640, Math.min(920, workHeight))]
 }
 
 async function createWindow(): Promise<BrowserWindow | null> {
   if (shutdownStarted) return null
   const window = new BrowserWindow({
-    width: 1440,
-    height: 920,
     minWidth: 960,
     minHeight: 640,
     show: false,
-    center: true,
-    fullscreen: false,
-    fullscreenable: true,
     backgroundColor: '#f5f5f4',
     icon: appIconPath(),
     ...mainWindowChromeOptions(process.platform, resolvedWindowTheme(store?.getSettings().theme)),
@@ -394,14 +386,13 @@ async function createWindow(): Promise<BrowserWindow | null> {
     },
   })
   mainWindow = window
-  // Fixed start by user choice. Ignore last size. Never start in fullscreen.
-  // Clamp to visible work area so traffic lights and chat box stay on screen.
+  // Fixed start by user choice. Ignore last size. Fresh windows are never
+  // fullscreen by default; clamp to the visible work area so traffic lights
+  // and chat box stay on screen. Falls back to true defaults when display
+  // info is unavailable.
   try {
-    if (window.isDestroyed()) return null
-    window.setFullScreen(false)
     const workArea = screen.getPrimaryDisplay().workAreaSize
-    const size = startSize(workArea.width, workArea.height)
-    window.setSize(size.width, size.height)
+    window.setSize(...startSize(workArea.width, workArea.height))
     window.center()
   } catch {
     // Keep default size and position when display info is unavailable.
@@ -577,19 +568,20 @@ function requestWindow(reason: 'activation' | 'second instance' | 'menu bar' | '
  * Normal user-sized windows pass through untouched.
  */
 export function normalizeRevealedWindow(window: BrowserWindow): void {
-  if (window.isDestroyed()) return
+  // No isDestroyed guard: the sole caller checks first, and every call below
+  // is inside try/catch, so a destroyed window simply keeps its state.
   try {
-    const full = window.isFullScreen()
     const workArea = screen.getPrimaryDisplay().workArea
     const bounds = window.getBounds()
-    if (!full
+    if (!window.isFullScreen()
       && bounds.width <= workArea.width
       && bounds.height <= workArea.height
       && bounds.x >= workArea.x
       && bounds.y >= workArea.y) return
-    if (full) window.setFullScreen(false)
-    const size = startSize(workArea.width, workArea.height)
-    window.setSize(size.width, size.height)
+    // Unconditional: a no-op for windows that are not fullscreen, and the
+    // early return above already left fitting windows untouched.
+    window.setFullScreen(false)
+    window.setSize(...startSize(workArea.width, workArea.height))
     window.center()
   } catch {
     // Keep the current window state when display info is unavailable.
