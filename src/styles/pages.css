@@ -34,8 +34,13 @@
 .project-item__actions { display: flex; opacity: 0; }
 .project-item:hover .project-item__actions, .project-item:focus-within .project-item__actions { opacity: 1; }
 .activity-list { display: flex; flex-direction: column; }
-.activity-row { position: relative; display: flex; border-bottom: 1px solid var(--border); }
-.activity-row__main { width: 100%; min-height: 78px; display: flex; align-items: flex-start; gap: 12px; padding: 13px 8px; color: inherit; background: transparent; text-align: left; }
+.activity-row { position: relative; display: flex; align-items: flex-start; border-bottom: 1px solid var(--border); }
+/* flex:1 + min-width:0 (not width:100%): the main cell must share the row with
+   the restore action and shrink below its content width. With width:100% the
+   flex basis was the full row width and the default min-width:auto floor let a
+   long nowrap preview keep the cell wide, overflowing the row and shoving the
+   restore button out of its column on exactly the rows with the most text. */
+.activity-row__main { flex: 1 1 auto; min-width: 0; min-height: 78px; display: flex; align-items: flex-start; gap: 12px; padding: 13px 8px; color: inherit; background: transparent; text-align: left; }
 .activity-row__main:hover { background: var(--surface-subtle); }
 .activity-row__main:focus-visible { background: var(--surface-subtle); }
 .activity-row__clear { position: absolute; z-index: 1; top: 13px; left: 8px; width: 30px; height: 30px; display: grid; place-items: center; padding: 0; border-radius: 8px; color: var(--prime); background: var(--prime-soft); opacity: 0; pointer-events: none; transform: scale(.82); transition: opacity 110ms ease-out, transform 110ms ease-out, color 110ms ease-out, background 110ms ease-out; }
